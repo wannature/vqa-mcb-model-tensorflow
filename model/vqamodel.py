@@ -2,10 +2,8 @@ import tensorflow as tf
 import math, numpy as np
 # compact bilinear pooling is cloned from
 #       https://github.com/therne/compact-bilinear-pooling-tf
-#from CBP.count_sketch import bilinear_pool
+from CBP.count_sketch import bilinear_pool
 
-def bilinear_pool(x1, x2, proj_dim):
-    return tf.zeros([128, proj_dim])
 
 def check_shape(tensor, name, shape):
     _shape = list(tensor.get_shape())
