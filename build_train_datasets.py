@@ -1,22 +1,20 @@
 import json, operator, re, time, pickle
 import tensorflow as tf, numpy as np
-from vqa_woAtt import *
-
-"""
-Feature vector of MSCOCO and list which match image_id to feature vector index
-assummed to be built already.
-"""
+from IPython import embed
 
 training_img_num = 45000
 validation_img_num = 5000
+word_num = 5000
+ans_candi_num = 5000
 
 # Caffe model : ResNet
 res_model = './model/resnet/ResNet-101-model.caffemodel'
 res_deploy = './model/resnet/ResNet-101-deploy.prototxt'
 
 layer = {
-        'default' : {layers : 'res5c_branch2b', layer_size : [2014], feat_path = '/data1/common_datasets/mscoco/features/train_res_feat.npy'}
-        '4b' : {layers = 'res4b22_branch2c', layer_size=[1024, 14, 14], feat_path = '/data1/common_datasets/mscoco/features/train_res4b_feat.npy'}}
+        'default' : {'layers' : 'res5c_branch2b', 'layer_size' : [2014], 'feat_path' : '/data1/common_datasets/mscoco/features/train_res_feat.npy'},
+        '4b' : {'layers' : 'res4b22_branch2c', 'layer_size' : [1024, 14, 14], 'feat_path' : '/data1/common_datasets/mscoco/features/train_res4b_feat.npy'}
+        }
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS
@@ -59,8 +57,8 @@ def create_annotations_result():
     a_wordtoix
     a_ixtoword
     """
-    annotations = json.load(open(FLAGS.annotations_path, 'rb'))[3*training_img_num]
-    questions = json.load(open(FLAGS.questions_path, 'rb'))[3*training_img_num]
+    annotations = json.load(open(FLAGS.annotations_path, 'rb'))['annotations'][:3*training_img_num]
+    questions = json.load(open(FLAGS.questions_path, 'rb'))['questions'][:3*training_img_num]
     image_id_list, question_list, answer_list = [], [], []
 
     q_dic, q_word2ix, q_ix2word = {}, {}, {}
@@ -75,32 +73,37 @@ def create_annotations_result():
                 else: a_dic[ans] = 1
     a_dic = sorted(a_dic.items(), key=operator.itemgetter(1))
     a_dic.reverse()
-    for i in range(FLAGS.ans_candi_num):
+    print "The number of words in answers is %d. Select only %d words."%(len(a_dic), ans_candi_num)
+    for i in range(ans_candi_num):
         a_word2ix[a_dic[i][0]] = i
         a_ix2word[i] = a_dic[i][0]
+    print "Answer word2ix, ix2word created. Threshold is %d"%(a_dic[ans_candi_num][1])
 
     # (2) create wordtoix, ixtoword for questions
-    p = re.compile('[\w]')
-    q_len_dic = {}
+    p = re.compile('[\w]+')
+    q_len_dic, q_freq_dic = {}, {}
     for dic in questions:
         q_dic[(dic['image_id'], dic['question_id'])] = dic['question']
         q_words = p.findall(dic['question'].lower())
         for qw in q_words:
-            if qw in q_dic : q_dic[qw] += 1
-            else: q_dic[qw] = 1
+            if qw in q_freq_dic : q_freq_dic[qw] += 1
+            else: q_freq_dic[qw] = 1
         q_len_key = 10*int(len(q_words)/10)
         if q_len_key in q_len_dic : q_len_dic[q_len_key] += 1
         else : q_len_dic[q_len_key] = 1
-    print "Dictionary about the length of questions"
+    print "Length of questions"
     for q_len_key in q_len_dic:
-        "%d ~ %d\t: %d" %(q_len_key, q_len_key+10, q_len_dic[q_len_key])
-    q_dic = sorted(q_dic.items(), key=operator.itemgetter(1))
-    q_dic.reverse()
+        print "%d ~ %d\t: %d" %(q_len_key, q_len_key+10, q_len_dic[q_len_key])
+    print "Total\t: %d" %(sum(q_len_dic.values()))
+    q_freq_dic = sorted(q_freq_dic.items(), key=operator.itemgetter(1))
+    q_freq_dic.reverse()
+    print "The number of words in questions is %d. Select only %d words."%(len(q_freq_dic), word_num)
     q_word2ix['?'] = 0
     q_ix2word[0] = '?'
-    for i in range(1, FLAGS.word_num):
-        q_word2ix[q_dic[i][0]] = i
-        q_ix2word[i] = q_dic[i][0]
+    for i in range(1, word_num):
+        q_word2ix[q_freq_dic[i-1][0]] = i
+        q_ix2word[i] = q_freq_dic[i-1][0]
+    print "Question word2ix, ix2word created. Threshold is %d"%(q_freq_dic[word_num][1])
 
     # (3) create annotations_result
     for dic in annotations:
@@ -112,7 +115,7 @@ def create_annotations_result():
                 answer_list.append(a_word2ix[a['answer']])
 
     print "All (img, question, answer) pairs are %d"%(len(image_id_list))
-    pickle.dump({'image_id' : image_id_list,
+    pickle.dump({'image_ids' : image_id_list,
         'questions' : question_list,
         'answers' : answer_list},
         open(FLAGS.annotations_result_path, 'wb'))
@@ -123,8 +126,11 @@ def create_annotations_result():
     pickle.dump(a_ix2word, open(FLAGS.worddic_path+'a_ix2word', 'wb'))
     print "Success to save Worddics"
 
-    # (4) Create image features
+    """
 
+    # (4) Create image features
+    # If you run this seperatly, load image_id_list
+    # image_id_list = pickle.load(open(FLAGS.annotations_result_path, 'rb'))['image_ids']
     unique_image_ids = image_id_list.unique()
     unique_images = unique_image_ids.map(lambda x: \
             os.path.join(image_path+("%12s"%str(x)).replace(" ","0")+".jpeg"))
@@ -145,5 +151,6 @@ def create_annotations_result():
                 layers=layers, layer_sizes=layer_size)
             np.save(FLAGS.feat_path, feats)
     print "Success to save features"
-
-
+    """
+if __name__ == '__main__':
+    create_annotations_result()

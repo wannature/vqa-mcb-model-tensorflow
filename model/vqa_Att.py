@@ -8,7 +8,6 @@ class VQA_with_Attention(VQAModel):
             word_num, embed_dim, ans_candi_num, n_lstm_steps)
         self.local_num = self.feature_dim[1]*self.feature_dim[2]
 
-
     def conv_forward_prop(self, input, shape, strides, alpha=0.1):
         kernel = self.init_weight(shape)
         conv = tf.nn.conv2d(input,kernel,strides, padding='SAME')
@@ -27,19 +26,18 @@ class VQA_with_Attention(VQAModel):
                 self.feature_dim[0], self.feature_dim[1]*self.feature_dim[2]])
         ques_feat = self.question_embed(question)
 
-        # ques_feat has [128, 1024]
-        # we want to make [128, 1024, 196]
         tiled_ques_feat = tf.tile(tf.reshape(ques_feat, [self.batch_size*self.feature_dim[0]]),
                 [self.local_num])
         tiled_ques_feat = tf.reshape(tiled_ques_feat, [self.local_num, self.batch_size, self.feature_dim[0]])
         tiled_ques_feat = tf.transpose(tiled_ques_feat, [1, 2, 0])
 
+        # Check if reshaped_image_feat and tied_ques_feat have proper shape
         check_size = [self.batch_size, self.feature_dim[0], self.local_num]
         check_shape(reshaped_image_feat, 'img_before_mcb1', check_size)
         check_shape(tiled_ques_feat, 'ques_before_mcb2', check_size)
 
         # First MCB module
-        # TODO : how to parallelize?
+        # TODO : how to parallelize? It takes too long!
         for k in range(self.feature_dim[1]*self.feature_dim[2]):
             indices = []
             for i in range(self.batch_size):
@@ -78,7 +76,7 @@ class VQA_with_Attention(VQAModel):
                     [0, 2, 1]) * \
                     tf.expand_dims(alpha, 2), 1)
 
-        # Now, ques_feat and att_feat both have [1024] shape
+        # Check if ques_feat and att_feat have proper shape
         check_size = [self.batch_size, self.feature_dim[0]]
         check_shape(att_feat, 'att before mcb2', check_size)
         check_shape(ques_feat, 'ques before mcb2', check_size)

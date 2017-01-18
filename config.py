@@ -1,5 +1,5 @@
-from vqa_woAtt import VQA_without_Attention
-from vqa_Att import VQA_with_Attention
+from model.vqa_woAtt import VQA_without_Attention
+from model.vqa_Att import VQA_with_Attention
 
 """
 Use 50000 images and 150000 questions
@@ -10,21 +10,21 @@ Use 50000 images and 150000 questions
 training_img_num = 45000
 validation_img_num = 5000
 
-
 attention_set = {
         0 : {'name' : 'noAtten/', 'feature_dim' : [2048],
-            'feats_path' = '/data1/common_datasets/mscoco/features/train_res_feats.npy',
-            'val_feats_path' = '/data1/common_datasets/mscoco/features/val_res_feats.npy',
+            'feats_path' : '/data1/common_datasets/mscoco/features/train_res_feats.npy',
+            'val_feats_path' : '/data1/common_datasets/mscoco/features/val_res_feats.npy',
             'model' : VQA_without_Attention},
         1 : {'name' : 'Atten1/', 'feature_dim' : [1024,14,14],
             'feats_path' : '/data1/common_datasets/mscoco/features/train_res4b_feats.npy',
-            'val_feats_path' = '/data1/common_datasets/mscoco/features/val_res4b_feats.npy',
-            'model' : VQA_with_Attention}}
+            'val_feats_path' : '/data1/common_datasets/mscoco/features/val_res4b_feats.npy',
+            'model' : VQA_with_Attention}
+        }
 
 class Config(object):
     def __init__(self, attention_num = 0, proj_dim = 16000,
-            batch_size = 128, val_batch_size = 32, word_num = 20000, embed_dim = 300,
-            ans_candi_num = 3000, n_lstm_steps = 50, max_epoch = 100):
+            batch_size = 128, val_batch_size = 32, word_num = 5000, embed_dim = 200,
+            ans_candi_num = 5000, n_lstm_steps = 20, max_epoch = 30):
 
             attset = attention_set[attention_num]
 
@@ -61,7 +61,9 @@ class Config(object):
             self.worddic_path = base_dir
             self.feats_path = base_dir+attset['feats_path']
             self.val_feats_path = base_dir+attset['val_feats_path']
+            self.log_path = base_dir+'log_'+attset['name']
             self.result_path = base_dir+'result_'+attset['name']+'result-%d'
 
-
+if __name__ == '__main__':
+    config = Config()
 
