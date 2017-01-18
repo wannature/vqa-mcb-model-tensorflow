@@ -7,6 +7,17 @@ Feature vector of MSCOCO and list which match image_id to feature vector index
 assummed to be built already.
 """
 
+training_img_num = 45000
+validation_img_num = 5000
+
+# Caffe model : ResNet
+res_model = './model/resnet/ResNet-101-model.caffemodel'
+res_deploy = './model/resnet/ResNet-101-deploy.prototxt'
+
+layer = {
+        'default' : {layers : 'res5c_branch2b', layer_size : [2014], feat_path = '/data1/common_datasets/mscoco/features/train_res_feat.npy'}
+        '4b' : {layers = 'res4b22_branch2c', layer_size=[1024, 14, 14], feat_path = '/data1/common_datasets/mscoco/features/train_res4b_feat.npy'}}
+
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
@@ -22,6 +33,9 @@ flags.DEFINE_string('annotations_result_path',
 flags.DEFINE_string('worddic_path',
             '/data1/shmsw25/vqa/',
             """path to save wordtoix and ixtoword""")
+flags.DEFINE_string('image_path',
+            '/data1/common_datasets/mscoco/images/train2014/',
+            """path for train images""")
 flags.DEFINE_string('imgix2featix',
             '/data1/shmsw25/vqa/img2feat',
             """features of images path""")
@@ -37,7 +51,7 @@ def create_annotations_result():
         question
         question_id
     annotations_result(train only answers with confidence 'yes')
-        image_idx_list : list of image ids (with index of feature vector)
+        image_id_list : list of image ids (with original image_id)
         question_list : list of questions (with sentence)
         answer_list : list of answers (with index)
     q_wordtoix
@@ -45,9 +59,9 @@ def create_annotations_result():
     a_wordtoix
     a_ixtoword
     """
-    annotations = json.load(open(FLAGS.annotations_path, 'rb'))
-    questions = json.load(open(FLAGS.questions_path, 'rb'))
-    image_idx_list, question_list, answer_list = [], [], []
+    annotations = json.load(open(FLAGS.annotations_path, 'rb'))[3*training_img_num]
+    questions = json.load(open(FLAGS.questions_path, 'rb'))[3*training_img_num]
+    image_id_list, question_list, answer_list = [], [], []
 
     q_dic, q_word2ix, q_ix2word = {}, {}, {}
     a_dic, a_word2ix, a_ix2word = {}, {}, {}
@@ -89,17 +103,16 @@ def create_annotations_result():
         q_ix2word[i] = q_dic[i][0]
 
     # (3) create annotations_result
-    imgix2featix = pickle.load(open(FLAGS.imgix2featix, 'rb'))
     for dic in annotations:
         q = q_dic[(dic['image_id'], dic['question_id'])]
         for a in dic['answers']:
             if a['answer_confidence'] == 'yes' and a['answer'] in a_word2ix:
-                image_idx_list.append(imgix2featix[dic['image_id']])
+                image_id_list.append(dic['image_id'])
                 question_list.append(q)
                 answer_list.append(a_word2ix[a['answer']])
 
     print "All (img, question, answer) pairs are %d"%(len(image_id_list))
-    pickle.dump({'image_idx' : image_idx_list,
+    pickle.dump({'image_id' : image_id_list,
         'questions' : question_list,
         'answers' : answer_list},
         open(FLAGS.annotations_result_path, 'wb'))
@@ -109,4 +122,28 @@ def create_annotations_result():
     pickle.dump(a_word2ix, open(FLAGS.worddic_path+'a_word2ix', 'wb'))
     pickle.dump(a_ix2word, open(FLAGS.worddic_path+'a_ix2word', 'wb'))
     print "Success to save Worddics"
+
+    # (4) Create image features
+
+    unique_image_ids = image_id_list.unique()
+    unique_images = unique_image_ids.map(lambda x: \
+            os.path.join(image_path+("%12s"%str(x)).replace(" ","0")+".jpeg"))
+    print "Unique images are %d" %(len(unique_images))
+    for i in range(len(unique_images)):
+        imgix2featix[unique_image_ids[i]] = i
+    pickle.dump(imgix2featix, open(FLAGS.imgix2featix, 'wb'))
+
+    cnn = CNN(model=res_model, deploy=res_deploy, width=224, height=224)
+
+    for dic in layers:
+
+        layers = dic['layers']
+        layer_size = dic['layer_size']
+        feat_path = dic['feat_path']
+        if not os.path.exists(feat_path):
+            feats = cnn.get_features(unique_images,
+                layers=layers, layer_sizes=layer_size)
+            np.save(FLAGS.feat_path, feats)
+    print "Success to save features"
+
 

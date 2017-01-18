@@ -28,9 +28,10 @@ def train(config = Config()):
     to_idx = range(config.batch_size, config.training_num, config.batch_size)
 
     annotations_result = json.load(open(config.annotations_result_path, 'rb'))
-    image_idx = annotations_result['image_idx']
+    image_id = annotations_result['image_id']
     questions = annotations_result['questions']
     answers = annotations_result['answers']
+    imgix2featix = pickle.load(open(config.imgix2featix, 'rb'))
     q_word2ix = json.load(open(config.worddic_path+'q_word2ix', 'rb'))
     feats = np.load(config.feats_path)
 
@@ -47,7 +48,7 @@ def train(config = Config()):
 
         for (start, end) in zip(from_idx, to_idx):
             # make curr_image_feat [batch_size, feature_dim]
-            curr_image_feat = feats[image_idx[start:end]]
+            curr_image_feat = feats[imgix2featix[image_id[start:end]]]
             # make curr_question [batch_size, n_lstm_steps]
             curr_question = map(lambda ques :
                 [q_word2ix[word] for word in ques.lower() if word in q_word2ix],

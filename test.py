@@ -31,6 +31,7 @@ def train(config=Config(), epoch):
     answers = annotations_result['answers']
     q_word2ix = pickle.load(open(config.worddic_path+'q_word2ix', 'rb'))
     a_ix2word = pickle.load(open(config.worddic_path+'a_ix2word', 'rb'))
+    imgix2featix = pickle.load(open(config.val_imgix2featix, 'rb'))
     feats = np.load(config.val_feats_path)
 
     print "*** Test Start ***"
@@ -38,7 +39,7 @@ def train(config=Config(), epoch):
     result = []
     for (start, end) in zip(from_idx, to_idx):
         # make curr_image_feat [batch_size, feature_dim]
-        curr_image_feat = feats[start:end]
+        curr_image_feat = feats[imgix2featix[image_id[start:end]]]
         # make curr_question [batch_size, n_lstm_steps]
         curr_question = map(lambda ques :
             [q_word2ix[word] for word in ques.lower() if word in q_word2ix],
