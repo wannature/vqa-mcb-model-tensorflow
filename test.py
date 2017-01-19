@@ -4,7 +4,7 @@ from tensorflow.python.framework import ops
 from config import Config
 from keras.preprocessing import sequence
 
-def test(config=Config(), epoch_list = range(3,10)):
+def test(config=Config(), epoch_list = range(2)):
 
     from_idx = range(0, config.validation_num, config.val_batch_size)
     to_idx = range(config.val_batch_size, config.val_batch_size+config.validation_num, config.val_batch_size)

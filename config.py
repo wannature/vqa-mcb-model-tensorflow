@@ -17,7 +17,7 @@ word_num = 5000
 embed_dim = 200
 ans_candi_num = 5000
 n_lstm_steps = 20
-max_epoch = 30
+max_epoch = 10
 
 feats_path = '/data1/common_datasets/mscoco/features/train_res_feat.npy'
 val_feats_path = '/data1/common_datasets/mscoco/features/val_res_feat.npy'
