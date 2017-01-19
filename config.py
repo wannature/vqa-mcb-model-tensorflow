@@ -12,12 +12,12 @@ validation_img_num = 5000
 
 attention_set = {
         0 : {'name' : 'noAtten/', 'feature_dim' : [2048],
-            'feats_path' : '/data1/common_datasets/mscoco/features/train_res_feats.npy',
-            'val_feats_path' : '/data1/common_datasets/mscoco/features/val_res_feats.npy',
+            'feats_path' : '/data1/common_datasets/mscoco/features/train_res_feat.npy',
+            'val_feats_path' : '/data1/common_datasets/mscoco/features/val_res_feat.npy',
             'model' : VQA_without_Attention},
         1 : {'name' : 'Atten1/', 'feature_dim' : [1024,14,14],
-            'feats_path' : '/data1/common_datasets/mscoco/features/train_res4b_feats.npy',
-            'val_feats_path' : '/data1/common_datasets/mscoco/features/val_res4b_feats.npy',
+            'feats_path' : '/data1/common_datasets/mscoco/features/train_res4b_feat.npy',
+            'val_feats_path' : '/data1/common_datasets/mscoco/features/val_res4b_feat.npy',
             'model' : VQA_with_Attention}
         }
 

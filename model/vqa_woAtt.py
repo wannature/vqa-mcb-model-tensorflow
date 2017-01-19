@@ -16,7 +16,7 @@ class VQA_without_Attention(VQAModel):
         ques_feat = self.question_embed(question)
         feat = self.bilinear_pool(image_feat, ques_feat)
 
-        signed_feat = tf.sign(feat)*tf.sqrt(feat)
+        signed_feat = tf.sign(feat)*tf.sqrt(tf.abs(feat))
         normalized_feat = tf.nn.l2_normalize(signed_feat, 0)
         logit = tf.matmul(normalized_feat, self.fc_W) + self.fc_b
 

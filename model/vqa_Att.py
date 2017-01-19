@@ -54,7 +54,7 @@ class VQA_with_Attention(VQAModel):
                     self.feature_dim[1], self.feature_dim[2]])
 
         # end for First MCB module
-        signed_att = tf.sign(att)*tf.sqrt(att)
+        signed_att = tf.sign(att)*tf.sqrt(tf.abs(att))
         normalized_att = tf.nn.l2_normalize(signed_att, 0)
         normalized_att = tf.transpose(normalized_att, [0, 2, 3, 1])
 
@@ -82,7 +82,7 @@ class VQA_with_Attention(VQAModel):
         # Second MCB module
         feat = self.bilinear_pool(ques_feat, att_feat)
 
-        signed_feat = tf.sign(feat)*tf.sqrt(feat)
+        signed_feat = tf.sign(feat)*tf.sqrt(tf.abs(feat))
         normalized_feat = tf.nn.l2_normalize(signed_feat, 0)
         logit = tf.matmul(normalized_feat, self.fc_W) + self.fc_b
 
