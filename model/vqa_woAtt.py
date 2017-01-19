@@ -14,10 +14,7 @@ class VQA_without_Attention(VQAModel):
         answer = tf.placeholder("int32", [self.batch_size])
 
         ques_feat = self.question_embed(question)
-        check_shape(image_feat, 'image_feat', [self.batch_size, self.feature_dim[0]])
-        check_shape(ques_feat, 'ques_feat', [self.batch_size, self.feature_dim[0]])
-        feat = bilinear_pool(image_feat, ques_feat, self.proj_dim)
-        check_shape(feat, 'feat', [self.batch_size, self.proj_dim])
+        feat = self.bilinear_pool(image_feat, ques_feat)
 
         signed_feat = tf.sign(feat)*tf.sqrt(feat)
         normalized_feat = tf.nn.l2_normalize(signed_feat, 0)

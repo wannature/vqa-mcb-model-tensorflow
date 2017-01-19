@@ -1,6 +1,7 @@
-import json, operator, re, time, pickle
-import tensorflow as tf, numpy as np
+import json, operator, re, time, pickle, os
+import numpy as np
 from IPython import embed
+from cnn import *
 
 training_img_num = 45000
 validation_img_num = 5000
@@ -8,35 +9,21 @@ word_num = 5000
 ans_candi_num = 5000
 
 # Caffe model : ResNet
-res_model = './model/resnet/ResNet-101-model.caffemodel'
-res_deploy = './model/resnet/ResNet-101-deploy.prototxt'
+res_model = '/home/shmsw25/caffe/models/resnet/ResNet-101-model.caffemodel'
+res_deploy = '/home/shmsw25/caffe/models/resnet/ResNet-101-deploy.prototxt'
 
-layer = {
-        'default' : {'layers' : 'res5c_branch2b', 'layer_size' : [2014], 'feat_path' : '/data1/common_datasets/mscoco/features/train_res_feat.npy'},
+layer_set = {
+        'default' : {'layers' : 'pool5', 'layer_size' : [2048], 'feat_path' : '/data1/common_datasets/mscoco/features/train_res_feat.npy'},
         '4b' : {'layers' : 'res4b22_branch2c', 'layer_size' : [1024, 14, 14], 'feat_path' : '/data1/common_datasets/mscoco/features/train_res4b_feat.npy'}
         }
 
-flags = tf.app.flags
-FLAGS = flags.FLAGS
+annotations_path = '/data1/shmsw25/vqa/mscoco_train2014_annotations.json'
+questions_path = '/data1/shmsw25/vqa/OpenEnded_mscoco_train2014_questions.json'
+annotations_result_path = '/data1/shmsw25/vqa/train_annotations_result'
+worddic_path = '/data1/shmsw25/vqa/'
+image_path = '/data1/common_datasets/mscoco/images/train2014/COCO_train2014_'
+imgix2featix_path = '/data1/shmsw25/vqa/img2feat'
 
-flags.DEFINE_string('annotations_path',
-            '/data1/shmsw25/vqa/mscoco_train2014_annotations.json',
-            """annotation path""")
-flags.DEFINE_string('questions_path',
-            '/data1/shmsw25/vqa/OpenEnded_mscoco_train2014_questions.json',
-            """questions path""")
-flags.DEFINE_string('annotations_result_path',
-            '/data1/shmsw25/vqa/train_annotations_result',
-            """annotation path""")
-flags.DEFINE_string('worddic_path',
-            '/data1/shmsw25/vqa/',
-            """path to save wordtoix and ixtoword""")
-flags.DEFINE_string('image_path',
-            '/data1/common_datasets/mscoco/images/train2014/',
-            """path for train images""")
-flags.DEFINE_string('imgix2featix',
-            '/data1/shmsw25/vqa/img2feat',
-            """features of images path""")
 
 def create_annotations_result():
     """
@@ -57,8 +44,8 @@ def create_annotations_result():
     a_wordtoix
     a_ixtoword
     """
-    annotations = json.load(open(FLAGS.annotations_path, 'rb'))['annotations'][:3*training_img_num]
-    questions = json.load(open(FLAGS.questions_path, 'rb'))['questions'][:3*training_img_num]
+    annotations = json.load(open(annotations_path, 'rb'))['annotations'][:3*training_img_num]
+    questions = json.load(open(questions_path, 'rb'))['questions'][:3*training_img_num]
     image_id_list, question_list, answer_list = [], [], []
 
     q_dic, q_word2ix, q_ix2word = {}, {}, {}
@@ -118,39 +105,38 @@ def create_annotations_result():
     pickle.dump({'image_ids' : image_id_list,
         'questions' : question_list,
         'answers' : answer_list},
-        open(FLAGS.annotations_result_path, 'wb'))
+        open(annotations_result_path, 'wb'))
     print "Success to save Annotation results"
-    pickle.dump(q_word2ix, open(FLAGS.worddic_path+'q_word2ix', 'wb'))
-    pickle.dump(q_ix2word, open(FLAGS.worddic_path+'q_ix2word', 'wb'))
-    pickle.dump(a_word2ix, open(FLAGS.worddic_path+'a_word2ix', 'wb'))
-    pickle.dump(a_ix2word, open(FLAGS.worddic_path+'a_ix2word', 'wb'))
+    pickle.dump(q_word2ix, open(worddic_path+'q_word2ix', 'wb'))
+    pickle.dump(q_ix2word, open(worddic_path+'q_ix2word', 'wb'))
+    pickle.dump(a_word2ix, open(worddic_path+'a_word2ix', 'wb'))
+    pickle.dump(a_ix2word, open(worddic_path+'a_ix2word', 'wb'))
     print "Success to save Worddics"
-
-    """
 
     # (4) Create image features
     # If you run this seperatly, load image_id_list
-    # image_id_list = pickle.load(open(FLAGS.annotations_result_path, 'rb'))['image_ids']
-    unique_image_ids = image_id_list.unique()
-    unique_images = unique_image_ids.map(lambda x: \
-            os.path.join(image_path+("%12s"%str(x)).replace(" ","0")+".jpeg"))
+    #image_id_list = pickle.load(open(annotations_result_path, 'rb'))['image_ids']
+    unique_image_ids = list(set(image_id_list))
+    unique_images = map(lambda x: \
+            os.path.join(image_path+("%12s"%str(x)).replace(" ","0")+".jpg"),
+		unique_image_ids)
     print "Unique images are %d" %(len(unique_images))
+    imgix2featix = {}
     for i in range(len(unique_images)):
         imgix2featix[unique_image_ids[i]] = i
-    pickle.dump(imgix2featix, open(FLAGS.imgix2featix, 'wb'))
+    pickle.dump(imgix2featix, open(imgix2featix_path, 'wb'))
 
     cnn = CNN(model=res_model, deploy=res_deploy, width=224, height=224)
 
-    for dic in layers:
-
+    for dic in layer_set.values():
         layers = dic['layers']
         layer_size = dic['layer_size']
         feat_path = dic['feat_path']
         if not os.path.exists(feat_path):
             feats = cnn.get_features(unique_images,
                 layers=layers, layer_sizes=layer_size)
-            np.save(FLAGS.feat_path, feats)
+            np.save(feat_path, feats)
     print "Success to save features"
-    """
+    
 if __name__ == '__main__':
     create_annotations_result()

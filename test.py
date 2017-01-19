@@ -7,8 +7,7 @@ def test(config=Config(), epoch_list = range(10)):
     from_idx = range(0, config.valid_num, config.val_batch_size)
     to_idx = range(config.batch_size, config.valid_num, config.batch_size)
 
-    annotations_result = json.load(open(config.val_annotations_result_path, 'rb'))
-    image_idx = annotations_result['image_idx']
+    annotations_result = pickle.load(open(config.val_annotations_result_path, 'rb'))
     image_ids = annotations_result['image_ids']
     questions = annotations_result['questions']
     question_ids = annotations_result['question_ids']

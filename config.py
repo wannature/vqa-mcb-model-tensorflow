@@ -49,18 +49,20 @@ class Config(object):
             self.model_path = base_dir+'model/'+attset['name']
             self.checkpoint = None
 
-            self.annotations_path = base_dir+'mscoco_train2014_annotations.json'
-            self.questions_path = base_dir+'OpenEnded_mscoco_train2014_questions.json'
-            self.annotations_result_path = base_dir+'train_annotations_result.json'
+            self.annotations_path = base_dir + 'mscoco_train2014_annotations.json'
+            self.questions_path = base_dir + \
+			'OpenEnded_mscoco_train2014_questions.json'
+            self.annotations_result_path = base_dir + 'train_annotations_result'
             self.val_annotations_path = base_dir+'mscoco_val2014_annotations.json'
-            self.val_questions_path = base_dir+'OpenEnded_mscoco_val2014_questions.json'
-            self.val_annotations_result_path = base_dir+'val_annotations_result.json'
+            self.val_questions_path = base_dir + \
+			'OpenEnded_mscoco_val2014_questions.json'
+            self.val_annotations_result_path = base_dir + 'val_annotations_result'
 
-            self.imgix2featix = base_dir+'img2feat',
+            self.imgix2featix = base_dir+'img2feat'
             self.val_imgix2featix = base_dir+'val_img2feat'
             self.worddic_path = base_dir
-            self.feats_path = base_dir+attset['feats_path']
-            self.val_feats_path = base_dir+attset['val_feats_path']
+            self.feats_path = attset['feats_path']
+            self.val_feats_path = attset['val_feats_path']
             self.log_path = base_dir+'log_'+attset['name']
             self.result_path = base_dir+'result_'+attset['name']+'result-%d'
 

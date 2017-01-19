@@ -1,4 +1,4 @@
-import json, operator, re, time
+import json, pickle, operator, re, time
 import tensorflow as tf, numpy as np
 from config import Config
 
@@ -29,12 +29,12 @@ def train(config = Config()):
     from_idx = range(0, config.training_num, config.batch_size)
     to_idx = range(config.batch_size, config.training_num, config.batch_size)
 
-    annotations_result = json.load(open(config.annotations_result_path, 'rb'))
-    image_id = annotations_result['image_id']
+    annotations_result = pickle.load(open(config.annotations_result_path, 'rb'))
+    image_id = annotations_result['image_ids']
     questions = annotations_result['questions']
     answers = annotations_result['answers']
     imgix2featix = pickle.load(open(config.imgix2featix, 'rb'))
-    q_word2ix = json.load(open(config.worddic_path+'q_word2ix', 'rb'))
+    q_word2ix = pickle.load(open(config.worddic_path+'q_word2ix', 'rb'))
 
     feats = np.load(config.feats_path)
 

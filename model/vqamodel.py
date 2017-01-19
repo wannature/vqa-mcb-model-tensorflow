@@ -1,9 +1,6 @@
 import tensorflow as tf
 import math, numpy as np
-# compact bilinear pooling is cloned from
-#       https://github.com/therne/compact-bilinear-pooling-tf
-from CBP.count_sketch import bilinear_pool
-
+from CBP import CBP
 
 def check_shape(tensor, name, shape):
     _shape = list(tensor.get_shape())
@@ -24,6 +21,9 @@ class VQAModel():
         self.embed_dim = embed_dim
         self.ans_candi_num = ans_candi_num
         self.n_lstm_steps = n_lstm_steps
+
+        cbp = CBP(feature_dim[0], proj_dim)
+        self.bilinear_pool = cbp.bilinear_pool
 
         # Word Embedding E (K*m)
         with tf.device("/cpu:0"):

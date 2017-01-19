@@ -1,12 +1,16 @@
 import tensorflow as tf
 from vqamodel import *
+from CBP import CBP
 
 class VQA_with_Attention(VQAModel):
     def __init__(self, batch_size, feature_dim, proj_dim,
             word_num, embed_dim, ans_candi_num, n_lstm_steps):
         VQAModel.__init__(self,batch_size, feature_dim, proj_dim,
             word_num, embed_dim, ans_candi_num, n_lstm_steps)
+
         self.local_num = self.feature_dim[1]*self.feature_dim[2]
+        cbp_local = CBP(self.feature_dim[0], self.proj_dim)
+        self.bilinear_pool_local = cbp_local.bilinear_pool
 
     def conv_forward_prop(self, input, shape, strides, alpha=0.1):
         kernel = self.init_weight(shape)
@@ -32,33 +36,27 @@ class VQA_with_Attention(VQAModel):
         tiled_ques_feat = tf.transpose(tiled_ques_feat, [1, 2, 0])
 
         # Check if reshaped_image_feat and tied_ques_feat have proper shape
-        check_size = [self.batch_size, self.feature_dim[0], self.local_num]
-        check_shape(reshaped_image_feat, 'img_before_mcb1', check_size)
-        check_shape(tiled_ques_feat, 'ques_before_mcb2', check_size)
+        #check_size = [self.batch_size, self.feature_dim[0], self.local_num]
+        #check_shape(reshaped_image_feat, 'img_before_mcb1', check_size)
+        #check_shape(tiled_ques_feat, 'ques_before_mcb2', check_size)
 
         # First MCB module
-        # TODO : how to parallelize? It takes too long!
-        for k in range(self.feature_dim[1]*self.feature_dim[2]):
-            indices = []
-            for i in range(self.batch_size):
-                l = []
-                for j in range(self.feature_dim[0]):
-                    l.append([i, j, k])
-                indices.append(l)
-            curr_i = tf.gather_nd(reshaped_image_feat, indices)
-            curr_q = tf.gather_nd(tiled_ques_feat, indices)
-            curr_att = tf.expand_dims(bilinear_pool(curr_i, curr_q, self.proj_dim), 0)
-            if k==0: att = curr_att
-            else: att = tf.concat(0, [att, curr_att])
-        att = tf.reshape(tf.transpose(att, [1, 2, 0]),
-                [self.batch_size, self.proj_dim, self.feature_dim[1], self.feature_dim[2]])
+        before_pool_image_feat = tf.reshape(
+                tf.transpose(reshaped_image_feat, [0, 2, 1]),
+                [self.batch_size * self.local_num, self.feature_dim[0]])
+        before_pool_ques_feat = tf.reshape(
+                tf.transpose(tiled_ques_feat, [0, 2, 1]),
+                [self.batch_size * self.local_num, self.feature_dim[0]])
+        att = self.bilinear_pool_local(before_pool_image_feat, before_pool_ques_feat)
+        att = tf.reshape(att, [self.batch_size, self.local_num, self.proj_dim])
+        att = tf.reshape(tf.transpose(att, [0, 2, 1]),
+                [self.batch_size, self.proj_dim,
+                    self.feature_dim[1], self.feature_dim[2]])
 
         # end for First MCB module
         signed_att = tf.sign(att)*tf.sqrt(att)
         normalized_att = tf.nn.l2_normalize(signed_att, 0)
         normalized_att = tf.transpose(normalized_att, [0, 2, 3, 1])
-        check_shape(normalized_att, 'normalized_att', [self.batch_size, \
-                self.feature_dim[1], self.feature_dim[2], self.proj_dim])
 
         conv1 = self.conv_forward_prop(normalized_att,
             [3, 3, self.proj_dim, 512],
@@ -77,12 +75,12 @@ class VQA_with_Attention(VQAModel):
                     tf.expand_dims(alpha, 2), 1)
 
         # Check if ques_feat and att_feat have proper shape
-        check_size = [self.batch_size, self.feature_dim[0]]
-        check_shape(att_feat, 'att before mcb2', check_size)
-        check_shape(ques_feat, 'ques before mcb2', check_size)
+        #check_size = [self.batch_size, self.feature_dim[0]]
+        #check_shape(att_feat, 'att before mcb2', check_size)
+        #check_shape(ques_feat, 'ques before mcb2', check_size)
 
         # Second MCB module
-        feat = bilinear_pool(ques_feat, att_feat, self.proj_dim)
+        feat = self.bilinear_pool(ques_feat, att_feat)
 
         signed_feat = tf.sign(feat)*tf.sqrt(feat)
         normalized_feat = tf.nn.l2_normalize(signed_feat, 0)
