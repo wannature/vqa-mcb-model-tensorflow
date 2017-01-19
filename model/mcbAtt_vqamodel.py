@@ -2,7 +2,7 @@ import tensorflow as tf
 from vqamodel import *
 from CBP import CBP
 
-class VQA_with_Attention(VQAModel):
+class MCB_with_Attention(VQAModel):
     def __init__(self, batch_size, feature_dim, proj_dim,
             word_num, embed_dim, ans_candi_num, n_lstm_steps):
         VQAModel.__init__(self,batch_size, feature_dim, proj_dim,

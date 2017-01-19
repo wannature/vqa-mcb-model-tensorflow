@@ -1,17 +1,19 @@
 import sys, os
-from vqa import VQA, from vqaEvaluation.vqaEval import VQAEval
+from vqaTools.vqa import VQA
+from vqaEvaluation.vqaEval import VQAEval
 import json, random
 from config import Config
 
-def vqaEval(config = Config(), epoch_list = range(10)):
+def vqaEval(config = Config(), epoch_list = range(3,10)):
     accuracy_dic = {}
     best_accuracy, best_epoch = 0.0, -1
 
     # set up file names and paths
-    annFile = config.val_annotations_path
-    quesFile = config.val_questions_path
+    annFile = config.selected_val_annotations_path
+    quesFile = config.selected_val_questions_path
 
-    def vqaEval_single(epoch):
+    for epoch in epoch_list:
+
         resFile = config.result_path%(epoch)
 
         vqa = VQA(annFile, quesFile)
@@ -41,6 +43,7 @@ def vqaEval(config = Config(), epoch_list = range(10)):
         if accuracy > best_accuracy:
             best_accuracy = accuracy
             best_epoch = epoch
+
 
     print "** Done for every epoch! **"
     print "Accuracy Dictionry"

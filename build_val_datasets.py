@@ -16,6 +16,10 @@ layer_set = {
 annotations_path = '/data1/shmsw25/vqa/mscoco_val2014_annotations.json'
 questions_path = '/data1/shmsw25/vqa/OpenEnded_mscoco_val2014_questions.json'
 annotations_result_path = '/data1/shmsw25/vqa/val_annotations_result'
+selected_annotations_path = '/data1/shmsw25/vqa/selected_mscoco_val2014_annotations.json'
+selected_questions_path = '/data1/shmsw25/vqa/selected_OpenEnded_mscoco_val2014_questions.json'
+
+
 image_path = '/data1/common_datasets/mscoco/images/val2014/COCO_val2014_'
 imgix2featix_path = '/data1/shmsw25/vqa/val_img2feat'
 worddic_path = '/data1/shmsw25/vqa/'
@@ -38,6 +42,13 @@ def create_annotations_result():
     """
     annotations = json.load(open(annotations_path, 'rb'))['annotations'][:validation_img_num*3]
     questions = json.load(open(questions_path, 'rb'))['questions'][:validation_img_num*3]
+    json.dump({'annotations':annotations}, open(selected_annotations_path, 'wb'))
+    json.dump({'questions':questions,
+		'info' : '', 'task_type' : '', 'data_type' : '',
+		'data_subtype' : '', 'license' : ''},
+		open(selected_questions_path, 'wb'))
+    return
+
     image_id_list, question_list, question_id_list, answer_list = [], [], [], []
 
     a_word2ix = pickle.load(open(worddic_path + 'a_word2ix', 'rb'))

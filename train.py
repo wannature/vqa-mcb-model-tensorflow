@@ -1,4 +1,4 @@
-import json, pickle, operator, re, time
+import json, pickle, operator, re, time, os
 import tensorflow as tf, numpy as np
 from config import Config
 from keras.preprocessing import sequence
@@ -10,7 +10,7 @@ def train(config = Config()):
     model = config.vqamodel(
             batch_size=config.batch_size,
             feature_dim=config.feature_dim,
-            proj_dim=config.proj_dim,
+            proj_dim=4096, #config.proj_dim,
             word_num=config.word_num,
             embed_dim=config.embed_dim,
             ans_candi_num=config.ans_candi_num,
@@ -51,7 +51,8 @@ def train(config = Config()):
     for epoch in range(config.max_epoch):
         print "Start running epoch %d" % (epoch)
         t = time.time()
-
+	
+	dd = model.debug_dic
         shuffler = np.random.permutation(config.training_num)
         feats = feats[shuffler]
         questions = questions[shuffler]
@@ -65,14 +66,23 @@ def train(config = Config()):
             # make curr_answer [batch_size]
             curr_answer = answers[start:end]
 
-            _, loss, summary = sess.run([train_op, loss_op, loss_sum_op],
+            _, loss, summary, f, nf, logit = sess.run(
+		    [train_op, loss_op, loss_sum_op,
+		    dd['feat'], dd['normal_feat'], dd['logit']],
                     feed_dict = {image_feat : curr_image_feat,
                                 question : curr_question,
                                 answer : curr_answer})
             sum_writer.add_summary(summary, sum_step)
             sum_step += 1
             tot_loss += loss
-
+	    """
+	    if (start/config.batch_size)%100 == 0:
+		#print f
+		#print nf
+		#print logit
+		print "local_step %d\tloss %.2f"%(start/config.batch_size, loss)
+		#a = raw_input()
+	    """
         print "Total Loss : %.3f" %(tot_loss/len(to_idx))
         print "End running epoch %d : %dmin" %(epoch, (time.time()-t)/60)
         saver.save(sess, os.path.join(config.model_path, 'model'),
