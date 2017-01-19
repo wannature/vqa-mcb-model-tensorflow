@@ -1,6 +1,5 @@
 import tensorflow as tf
 from vqamodel import *
-from CBP import CBP
 
 class MCB_with_Attention(VQAModel):
     def __init__(self, batch_size, feature_dim, proj_dim,
@@ -10,7 +9,6 @@ class MCB_with_Attention(VQAModel):
 
         self.local_num = self.feature_dim[1]*self.feature_dim[2]
         cbp_local = CBP(self.feature_dim[0], self.proj_dim)
-        self.bilinear_pool_local = cbp_local.bilinear_pool
 
     def conv_forward_prop(self, input, shape, strides, alpha=0.1):
         kernel = self.init_weight(shape)
@@ -47,7 +45,7 @@ class MCB_with_Attention(VQAModel):
         before_pool_ques_feat = tf.reshape(
                 tf.transpose(tiled_ques_feat, [0, 2, 1]),
                 [self.batch_size * self.local_num, self.feature_dim[0]])
-        att = self.bilinear_pool_local(before_pool_image_feat, before_pool_ques_feat)
+        att = self.bilinear_pool(before_pool_image_feat, before_pool_ques_feat)
         att = tf.reshape(att, [self.batch_size, self.local_num, self.proj_dim])
         att = tf.reshape(tf.transpose(att, [0, 2, 1]),
                 [self.batch_size, self.proj_dim,
@@ -102,7 +100,7 @@ class MCB_with_Attention(VQAModel):
         return image_feat, question, max_prob_words
 
 if __name__ == '__main__':
-    model = VQA_with_Attention(128, [1024,14,14], 16000, 20000, 300, 3000, 50)
+    model = MCB_with_Attention(128, [1024,14,14], 16000, 20000, 300, 3000, 50)
     img, q, a, l = model.trainer()
     img, q, a_hat = model.solver()
 

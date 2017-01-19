@@ -19,7 +19,14 @@ def train(config = Config()):
     image_feat, question, answer, loss_op = model.trainer()
     saver = tf.train.Saver(max_to_keep = 50)
 
-    train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss_op)
+    #train_op = tf.train.AdamOptimizer(learning_rate).minimize(loss_op)
+    # Apply grad clipping
+    optimizer = tf.train.AdamOptimizer(learning_rate)
+    gvs = optimizer.compute_gradients(loss_op)
+    clipped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) \
+		for grad, var in gvs if not grad is None]
+    train_op = optimizer.apply_gradients(clipped_gvs)
+
     sum_writer = tf.train.SummaryWriter(config.log_path, sess.graph)
     loss_sum_op = tf.scalar_summary('train_loss', loss_op)
 
@@ -75,14 +82,14 @@ def train(config = Config()):
             sum_writer.add_summary(summary, sum_step)
             sum_step += 1
             tot_loss += loss
-	    """
+	    
 	    if (start/config.batch_size)%100 == 0:
 		#print f
 		#print nf
 		#print logit
 		print "local_step %d\tloss %.2f"%(start/config.batch_size, loss)
 		#a = raw_input()
-	    """
+	    
         print "Total Loss : %.3f" %(tot_loss/len(to_idx))
         print "End running epoch %d : %dmin" %(epoch, (time.time()-t)/60)
         saver.save(sess, os.path.join(config.model_path, 'model'),

@@ -1,6 +1,6 @@
 import tensorflow as tf
 import math, numpy as np
-from CBP import CBP
+from CBP.count_sketch import bilinear_pool
 
 def check_shape(tensor, name, shape):
     _shape = list(tensor.get_shape())
@@ -22,8 +22,7 @@ class VQAModel():
         self.ans_candi_num = ans_candi_num
         self.n_lstm_steps = n_lstm_steps
 
-        cbp = CBP(feature_dim[0], proj_dim)
-        self.bilinear_pool = cbp.bilinear_pool
+        self.bilinear_pool = lambda x, y : bilinear_pool(x, y, self.proj_dim)
 
         # Word Embedding E (K*m)
         with tf.device("/cpu:0"):
@@ -104,15 +103,16 @@ class VQAModel():
     def question_embed(self, question):
         h1, c1 = self.get_initial_lstm(tf.reduce_mean(question, 1))
         h2, c2 = self.get_initial_lstm(tf.reduce_mean(question, 1))
-
-        for idx in range(self.n_lstm_steps):
-            if idx == 0:
-                word_embed = tf.zeros([self.batch_size, self.embed_dim])
-            else:
-                tf.get_variable_scope().reuse_variables()
-                with tf.device("/cpu:0"):
-                    word_embed = tf.nn.embedding_lookup(self.Wemb, question[:,idx-1])
-            h1, c1, h2, c2 = self.forward_prop(h1, c1, h2, c2, word_embed, reuse=idx)
+	with tf.variable_scope('lstm'):
+            for idx in range(self.n_lstm_steps):
+                if idx == 0:
+                    word_embed = tf.zeros([self.batch_size, self.embed_dim])
+                else:
+                    tf.get_variable_scope().reuse_variables()
+                    with tf.device("/cpu:0"):
+                        word_embed = \
+			    tf.nn.embedding_lookup(self.Wemb, question[:,idx-1])
+                h1, c1, h2, c2 = self.forward_prop(h1, c1, h2, c2, word_embed, reuse=idx)
         return tf.concat(1, [h1, h2])
 
     def get_loss(self, logit, answer):

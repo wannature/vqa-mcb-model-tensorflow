@@ -43,7 +43,7 @@ config_set = {
         }
 
 class Config(object):
-    def __init__(self, config_name = 'concat'):
+    def __init__(self, config_name = 'mcb'):
 
             attset = config_set[config_name]
 

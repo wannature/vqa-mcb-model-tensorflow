@@ -40,7 +40,7 @@ class MCB_without_Attention(VQAModel):
         return image_feat, question, max_prob_words
 
 if __name__ == '__main__':
-    model = VQA_without_Attention(128, [2048], 16000, 20000, 300, 3000, 50)
+    model = MCB_without_Attention(128, [2048], 16000, 20000, 300, 3000, 50)
     img, q, a, l = model.trainer()
     img, q, a_hat = model.solver()
 
