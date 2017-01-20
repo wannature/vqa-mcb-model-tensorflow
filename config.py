@@ -11,7 +11,7 @@ training_img_num = 45000
 validation_img_num = 5000
 
 proj_dim = 16000
-batch_size = 128
+batch_size = 32
 val_batch_size = 8
 word_num = 5000
 embed_dim = 200
@@ -43,9 +43,9 @@ config_set = {
         }
 
 class Config(object):
-    def __init__(self, config_name = 'mcb'):
-
-            attset = config_set[config_name]
+    def __init__(self, config_name = 'mcbAtt'):
+	    self.config_name = config_name
+            attset = config_set[self.config_name]
 
             self.training_img_num = training_img_num
             self.validation_img_num = validation_img_num

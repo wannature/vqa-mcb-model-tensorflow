@@ -8,7 +8,6 @@ class MCB_with_Attention(VQAModel):
             word_num, embed_dim, ans_candi_num, n_lstm_steps)
 
         self.local_num = self.feature_dim[1]*self.feature_dim[2]
-        cbp_local = CBP(self.feature_dim[0], self.proj_dim)
 
     def conv_forward_prop(self, input, shape, strides, alpha=0.1):
         kernel = self.init_weight(shape)

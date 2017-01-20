@@ -44,6 +44,7 @@ def create_annotations_result():
     a_wordtoix
     a_ixtoword
     """
+    
     annotations = json.load(open(annotations_path, 'rb'))['annotations'][:3*training_img_num]
     questions = json.load(open(questions_path, 'rb'))['questions'][:3*training_img_num]
     image_id_list, question_list, answer_list = [], [], []
@@ -93,14 +94,17 @@ def create_annotations_result():
     print "Question word2ix, ix2word created. Threshold is %d"%(q_freq_dic[word_num][1])
 
     # (3) create annotations_result
+    num = 0
     for dic in annotations:
         q = q_dic[(dic['image_id'], dic['question_id'])]
-        for a in dic['answers']:
+        i = 0
+	for a in dic['answers']:
             if a['answer_confidence'] == 'yes' and a['answer'] in a_word2ix:
                 image_id_list.append(dic['image_id'])
                 question_list.append(q)
                 answer_list.append(a_word2ix[a['answer']])
-
+		i += 1
+	if i==0: num+=1
     print "All (img, question, answer) pairs are %d"%(len(image_id_list))
     pickle.dump({'image_ids' : image_id_list,
         'questions' : question_list,
@@ -112,22 +116,23 @@ def create_annotations_result():
     pickle.dump(a_word2ix, open(worddic_path+'a_word2ix', 'wb'))
     pickle.dump(a_ix2word, open(worddic_path+'a_ix2word', 'wb'))
     print "Success to save Worddics"
-
+    
     # (4) Create image features
     # If you run this seperatly, load image_id_list
     #image_id_list = pickle.load(open(annotations_result_path, 'rb'))['image_ids']
     unique_image_ids = list(set(image_id_list))
+    
     unique_images = map(lambda x: \
             os.path.join(image_path+("%12s"%str(x)).replace(" ","0")+".jpg"),
 		unique_image_ids)
-    print "Unique images are %d" %(len(unique_images))
     imgix2featix = {}
     for i in range(len(unique_images)):
         imgix2featix[unique_image_ids[i]] = i
     pickle.dump(imgix2featix, open(imgix2featix_path, 'wb'))
 
     cnn = CNN(model=res_model, deploy=res_deploy, width=224, height=224)
-
+    print len(unique_images)
+    
     for dic in layer_set.values():
         layers = dic['layers']
         layer_size = dic['layer_size']
@@ -135,6 +140,7 @@ def create_annotations_result():
         if not os.path.exists(feat_path):
             feats = cnn.get_features(unique_images,
                 layers=layers, layer_sizes=layer_size)
+	    print feats.shape
             np.save(feat_path, feats)
     print "Success to save features"
     

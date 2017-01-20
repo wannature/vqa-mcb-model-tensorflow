@@ -8,7 +8,6 @@ class MCB_without_Attention(VQAModel):
         VQAModel.__init__(self, batch_size, feature_dim, proj_dim, \
                 word_num, embed_dim, ans_candi_num, n_lstm_steps)
 
-	self.debug_dic = {}
 
     def model(self):
         image_feat = tf.placeholder("float32", [self.batch_size, self.feature_dim[0]])
@@ -20,10 +19,6 @@ class MCB_without_Attention(VQAModel):
         signed_feat = tf.sign(feat)*tf.sqrt(tf.abs(feat))
         normalized_feat = tf.nn.l2_normalize(signed_feat, 0)
 	logit = tf.matmul(normalized_feat, self.fc_W) + self.fc_b
-
-	self.debug_dic['feat'] = feat
-	self.debug_dic['normal_feat'] = normalized_feat
-	self.debug_dic['logit'] = logit
 	
         return image_feat, question, answer, logit
 
