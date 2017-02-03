@@ -12,13 +12,14 @@ def data_load(config):
     image_ids, questions, answers = annotation_load(config)
     feats = np.load(config.feats_path)
     q_word2ix = pickle.load(open(config.worddic_path+'q_word2ix', 'rb'))
- 
+
     questions = map(lambda ques :
                 [q_word2ix[word] for word in ques.lower() if word in q_word2ix],
                 questions)
     questions = np.array(sequence.pad_sequences(
                     questions, padding='post', maxlen=config.n_lstm_steps))
-    return feats, image_ids, questions, answers
+    #print feats.shape, len(image_ids), len(questions), len(answers)
+    return feats, np.array(image_ids), questions, answers
 
 
 def train(config = Config()):
@@ -34,7 +35,7 @@ def train(config = Config()):
             embed_dim=config.embed_dim,
             ans_candi_num=config.ans_candi_num,
             n_lstm_steps=config.n_lstm_steps)
-    
+
     image_feat, question, answer, loss_op = model.trainer()
     saver = tf.train.Saver(max_to_keep = 50)
 
@@ -51,18 +52,18 @@ def train(config = Config()):
     sess.run(tf.initialize_all_variables())
     if config.checkpoint:
         saver.restore(sess, config.model_path+"-%d"%(checkpoint))
-    
+
     from_idx = range(0, config.training_num, config.batch_size)
-    to_idx = range(config.batch_size, config.training_num + config.batch_size, config.batch_size)
+    to_idx = range(config.batch_size, config.training_num, config.batch_size)
     print "*** Training Start ***"
     sum_step = 0
     for epoch in range(config.max_epoch):
         print "Start running epoch %d" % (epoch)
         t = time.time()
 	# In mcbAtt, cannot shuffle because of OOM
-	if not config.config_name == 'mcbAtt':	
+	if not config.config_name == 'mcbAtt':
             shuffler = np.random.permutation(config.training_num)
-            feats = feats[shuffler]
+            image_ids = image_ids[shuffler]
             questions = questions[shuffler]
             answers = answers[shuffler]
         tot_loss = 0.0
@@ -83,10 +84,10 @@ def train(config = Config()):
             sum_writer.add_summary(summary, sum_step)
             sum_step += 1
             tot_loss += loss
-	    
+
 	    if (start/config.batch_size)%100 == 0:
 		print "local_step %d\tloss %.2f"%(start/config.batch_size, loss)
-	    
+
         print "Total Loss : %.3f" %(tot_loss/len(to_idx))
         print "End running epoch %d : %dmin" %(epoch, (time.time()-t)/60)
         saver.save(sess, os.path.join(config.model_path, 'model'),

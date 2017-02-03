@@ -80,7 +80,7 @@ class MCB_with_Attention(VQAModel):
         feat = self.bilinear_pool(ques_feat, att_feat)
 
         signed_feat = tf.sign(feat)*tf.sqrt(tf.abs(feat))
-        normalized_feat = tf.nn.l2_normalize(signed_feat, 0)
+        normalized_feat = tf.nn.l2_normalize(signed_feat, 1)
         logit = tf.matmul(normalized_feat, self.fc_W) + self.fc_b
 
         return image_feat, question, answer, logit

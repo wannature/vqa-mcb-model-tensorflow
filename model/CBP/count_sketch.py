@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-_sketch_op = tf.load_op_library('/home/shmsw25/vqa/model/CBP/build/count_sketch.so')
+_sketch_op = tf.load_op_library('/data/shmsw25/vqa/model/CBP/build/count_sketch.so')
 
 def count_sketch(probs, project_size):
     """ Calculates count-min sketch of a tensor.
@@ -11,8 +11,8 @@ def count_sketch(probs, project_size):
     Returns:c
       A projected count-min sketch `Tensor` with shape [batch_size, project_size].
     """
-    
-    
+
+
     with tf.variable_scope('CountSketch_'+probs.name.replace(':', '_')) as scope:
 	input_size = int(probs.get_shape()[1])
 
