@@ -4,7 +4,7 @@ from vqaEvaluation.vqaEval import VQAEval
 import json, random
 from config import Config
 
-def vqaEval(config = Config(), epoch_list = range(3,10)):
+def vqaEval(config = Config(), epoch_list = range(10)):
     accuracy_dic = {}
     best_accuracy, best_epoch = 0.0, -1
 
@@ -30,27 +30,35 @@ def vqaEval(config = Config(), epoch_list = range(3,10)):
         # print accuracies
         accuracy = vqaEval.accuracy['overall']
         print "Overall Accuracy is: %.02f\n" %(accuracy)
+        """
         print "Per Question Type Accuracy is the following:"
         for quesType in vqaEval.accuracy['perQuestionType']:
     	    print "%s : %.02f" %(quesType, vqaEval.accuracy['perQuestionType'][quesType])
         print "\n"
+        """
+        accuracy_dic[epoch] = {'overall' : accuracy}
         print "Per Answer Type Accuracy is the following:"
         for ansType in vqaEval.accuracy['perAnswerType']:
-	    print "%s : %.02f" %(ansType, vqaEval.accuracy['perAnswerType'][ansType])
-        print "\n"
+            accuracy_dic[epoch][ansType] = vqaEval.accuracy['perAnswerType'][ansType]
+	    #print "%s : %.02f" %(ansType, vqaEval.accuracy['perAnswerType'][ansType])
 
-        accuracy_dic[epoch] = accuracy
         if accuracy > best_accuracy:
             best_accuracy = accuracy
             best_epoch = epoch
 
 
-    print "** Done for every epoch! **"
-    print "Accuracy Dictionry"
-    print accuracy_dic
+    #print "** Done for every epoch! **"
+    #print "Accuracy Dictionry"
+    #print accuracy_dic
     print "Best Epoch is %d with Accuracy %.02f"%(best_epoch, best_accuracy)
-
+    return accuracy_dic
 
 if __name__ == '__main__':
-    vqaEval()
-
+    dic1 = vqaEval(config = Config(config_name = 'concat'))
+    dic2 = vqaEval(config = Config(config_name = 'mcb'))
+    print "Concat Results"
+    for epoch in dic1.keys():
+        print epoch, dic1[epoch]
+    print "MCB Results"
+    for epoch in dic2.keys():
+        print epoch, dic2[epoch]

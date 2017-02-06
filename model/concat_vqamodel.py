@@ -23,7 +23,7 @@ class Concat(VQAModel):
 	self.debug_dic['feat'] = feat
 	self.debug_dic['normal_feat'] = normalized_feat
 	self.debug_dic['logit'] = logit
-	
+
         return image_feat, question, answer, logit
 
     def trainer(self):

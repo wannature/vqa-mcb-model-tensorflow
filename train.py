@@ -2,6 +2,7 @@ import json, pickle, operator, re, time, os
 import tensorflow as tf, numpy as np
 from config import Config
 from keras.preprocessing import sequence
+from IPython import embed
 
 def annotation_load(config):
     annotations_result = pickle.load(open(config.annotations_result_path, 'rb'))
@@ -9,12 +10,13 @@ def annotation_load(config):
 
 
 def data_load(config):
+    p = re.compile('[\w]+')
     image_ids, questions, answers = annotation_load(config)
     feats = np.load(config.feats_path)
     q_word2ix = pickle.load(open(config.worddic_path+'q_word2ix', 'rb'))
-
     questions = map(lambda ques :
-                [q_word2ix[word] for word in ques.lower() if word in q_word2ix],
+                [q_word2ix[word] for word in p.findall(ques.lower())
+                    if word in q_word2ix],
                 questions)
     questions = np.array(sequence.pad_sequences(
                     questions, padding='post', maxlen=config.n_lstm_steps))
@@ -85,7 +87,7 @@ def train(config = Config()):
             sum_step += 1
             tot_loss += loss
 
-	    if (start/config.batch_size)%100 == 0:
+	    if (start/config.batch_size)%1000 == 0:
 		print "local_step %d\tloss %.2f"%(start/config.batch_size, loss)
 
         print "Total Loss : %.3f" %(tot_loss/len(to_idx))
@@ -95,6 +97,5 @@ def train(config = Config()):
 
 
 if __name__ == '__main__':
-    train()
-
-
+    #train(config = Config(config_name = 'concat'))
+    train(config = Config(config_name = 'mcb'))

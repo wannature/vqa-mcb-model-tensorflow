@@ -71,8 +71,8 @@ def create_annotations_result():
 	'question_ids' : question_id_list},
         open(annotations_result_path, 'wb'))
     print "Success to save Annotation results"
-    
-    
+
+
     # (2) Create image features
     # If you run this seperatly, load image_id_list
     # image_id_list = pickle.load(open(annotations_result_path, 'rb'))['image_ids']
@@ -98,7 +98,7 @@ def create_annotations_result():
                 layers=layers, layer_sizes=layer_size)
             np.save(feat_path, feats)
     print "Success to save features"
-    
+
 
 if __name__ == '__main__' :
     create_annotations_result()
